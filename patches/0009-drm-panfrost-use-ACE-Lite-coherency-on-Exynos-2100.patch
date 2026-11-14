@@ -1,0 +1,46 @@
+From 15c15877efbb8f0782f84b062390d7e0ca063180 Mon Sep 17 00:00:00 2001
+From: maxxponyata-sys <316521485+maxxponyata-sys@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 13:45:08 +0200
+Subject: [PATCH 09/10] drm/panfrost: use ACE-Lite coherency on Exynos 2100
+
+The Exynos 2100 interconnect is set up for ACE-Lite (the vendor kbase DT
+has system-coherency = <0>), but the GPU also advertises full ACE, which
+panfrost would pick for a dma-coherent device. Prefer ACE-Lite for
+samsung,exynos2100-mali.
+
+Without coherency the GPU sees stale data in freshly allocated buffers:
+garbage with AFBC and DATA_INVALID_FAULT job faults in GTK4. With it there
+are no faults and readback is about twice as fast.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/gpu/drm/panfrost/panfrost_gpu.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/panfrost/panfrost_gpu.c b/drivers/gpu/drm/panfrost/panfrost_gpu.c
+index 115b6d571..fb629759d 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_gpu.c
++++ b/drivers/gpu/drm/panfrost/panfrost_gpu.c
+@@ -5,6 +5,7 @@
+ #include <linux/bitfield.h>
+ #include <linux/bitmap.h>
+ #include <linux/delay.h>
++#include <linux/of.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+@@ -282,6 +283,11 @@ static int panfrost_gpu_init_features(struct panfrost_device *pfdev)
+ 
+ 	if (!pfdev->coherent) {
+ 		pfdev->features.selected_coherency = COHERENCY_NONE;
++	} else if (of_device_is_compatible(pfdev->base.dev->of_node,
++					   "samsung,exynos2100-mali") &&
++		   (pfdev->features.coherency_features & BIT(COHERENCY_ACE_LITE))) {
++		/* The Exynos 2100 interconnect is set up for ACE-Lite only */
++		pfdev->features.selected_coherency = COHERENCY_ACE_LITE;
+ 	} else if (pfdev->features.coherency_features & BIT(COHERENCY_ACE)) {
+ 		pfdev->features.selected_coherency = COHERENCY_ACE;
+ 	} else if (pfdev->features.coherency_features & BIT(COHERENCY_ACE_LITE)) {
+-- 
+2.53.0
+

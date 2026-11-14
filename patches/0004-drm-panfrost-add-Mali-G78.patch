@@ -1,0 +1,69 @@
+From 251600b576bf29e1f62c63cc44684feef8d2484d Mon Sep 17 00:00:00 2001
+From: maxxponyata-sys <316521485+maxxponyata-sys@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 10:55:34 +0200
+Subject: [PATCH 04/10] drm/panfrost: add Mali-G78
+
+Mali-G78 (GPU_ID 0x9202 on Exynos 2100) is a Valhall job-manager GPU
+with the same feature set as G57/G68.
+
+Tested on Galaxy S21 (o1s): G78 MC14 r0p1, with Mesa panfrost
+running OpenGL ES 3.1.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/gpu/drm/panfrost/panfrost_features.h | 3 +++
+ drivers/gpu/drm/panfrost/panfrost_gpu.c      | 4 ++++
+ drivers/gpu/drm/panfrost/panfrost_issues.h   | 8 ++++++++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/drivers/gpu/drm/panfrost/panfrost_features.h b/drivers/gpu/drm/panfrost/panfrost_features.h
+index 34c658471..6d82adb02 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_features.h
++++ b/drivers/gpu/drm/panfrost/panfrost_features.h
+@@ -123,6 +123,9 @@ enum panfrost_hw_feature {
+ 
+ #define hw_features_g68 hw_features_g57
+ 
++/* Mali-G78 (tNOx): same Valhall JM feature set as G57/G68 */
++#define hw_features_g78 hw_features_g57
++
+ static inline bool panfrost_has_hw_feature(struct panfrost_device *pfdev,
+ 					   enum panfrost_hw_feature feat)
+ {
+diff --git a/drivers/gpu/drm/panfrost/panfrost_gpu.c b/drivers/gpu/drm/panfrost/panfrost_gpu.c
+index 6081b2782..115b6d571 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_gpu.c
++++ b/drivers/gpu/drm/panfrost/panfrost_gpu.c
+@@ -243,6 +243,10 @@ static const struct panfrost_model gpu_models[] = {
+ 	GPU_MODEL(g57, 0x9093,
+ 		GPU_REV(g57, 0, 0)),
+ 
++	/* Mali-G78, e.g. Exynos 2100 (MP14) */
++	GPU_MODEL(g78, 0x9002,
++		  GPU_REV(g78, 0, 0), GPU_REV(g78, 1, 1)),
++
+ 	GPU_MODEL(g68, 0x9004,
+ 		  GPU_REV(g68, 1, 0), GPU_REV(g68, 1, 1)),
+ 	{0},
+diff --git a/drivers/gpu/drm/panfrost/panfrost_issues.h b/drivers/gpu/drm/panfrost/panfrost_issues.h
+index dd39946bb..70538e59a 100644
+--- a/drivers/gpu/drm/panfrost/panfrost_issues.h
++++ b/drivers/gpu/drm/panfrost/panfrost_issues.h
+@@ -273,6 +273,14 @@ enum panfrost_hw_issue {
+ 
+ #define hw_issues_g68_r1p1 0
+ 
++#define hw_issues_g78 (\
++	BIT_ULL(HW_ISSUE_TTRX_2968_TTRX_3162))
++
++#define hw_issues_g78_r0p0 (\
++	BIT_ULL(HW_ISSUE_TTRX_3485))
++
++#define hw_issues_g78_r1p1 0
++
+ static inline bool panfrost_has_hw_issue(const struct panfrost_device *pfdev,
+ 					 enum panfrost_hw_issue issue)
+ {
+-- 
+2.53.0
+
